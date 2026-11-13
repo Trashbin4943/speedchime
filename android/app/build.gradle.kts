@@ -6,7 +6,8 @@ plugins {
 
 android {
     namespace = "com.speedchime.speedchime"
-    compileSdk = flutter.compileSdkVersion
+    // permission_handler_android requires compileSdk >= 37 (targetSdk stays at Flutter default)
+    compileSdk = 37
     ndkVersion = flutter.ndkVersion
 
     compileOptions {
