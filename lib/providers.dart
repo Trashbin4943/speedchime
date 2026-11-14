@@ -4,6 +4,8 @@ import 'core/app_settings.dart';
 import 'services/chime_player.dart';
 import 'services/location_service.dart';
 import 'services/permission_service.dart';
+import 'services/relay_service.dart';
+import 'services/screen_wake.dart';
 import 'services/settings_repository.dart';
 
 /// Overridden in main() after SharedPreferences is loaded.
@@ -13,6 +15,8 @@ final settingsRepositoryProvider = Provider<SettingsRepository>(
 
 final locationServiceProvider = Provider((ref) => LocationService());
 final permissionServiceProvider = Provider((ref) => PermissionService());
+final relayServiceProvider = Provider((ref) => RelayService());
+final screenWakeProvider = Provider((ref) => ScreenWake());
 
 final chimePlayerProvider = Provider((ref) {
   final player = ChimePlayer();

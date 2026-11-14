@@ -33,12 +33,13 @@
                 <category android:name="android.intent.category.LAUNCHER"/>
             </intent-filter>
         </activity>
-        <!-- geolocator foreground service: must declare location type (Android 14+) -->
+        <!-- F-06 Chime Relay: flutter_foreground_task 서비스. location 타입 필수(Android 14+).
+             Warning: 서비스 이름은 바꾸지 말 것. -->
         <service
-            android:name="com.baseflow.geolocator.GeolocatorLocationService"
-            android:enabled="true"
-            android:exported="false"
-            android:foregroundServiceType="location" />
+            android:name="com.pravera.flutter_foreground_task.service.ForegroundService"
+            android:foregroundServiceType="location"
+            android:stopWithTask="true"
+            android:exported="false" />
         <!-- Don't delete the meta-data below.
              This is used by the Flutter tool to generate GeneratedPluginRegistrant.java -->
         <meta-data

@@ -17,7 +17,8 @@ flutter run                         # 실기기/에뮬레이터 실행
 ## 구조 (PRD 6. 파이프라인)
 
 ```
-LocationService (geolocator, 1s, FGS 알림)       lib/services/location_service.dart
+RelayService (flutter_foreground_task, location FGS + 알림 버튼)  lib/services/relay_service.dart  F-06
+LocationService (geolocator, 1s)                lib/services/location_service.dart
   → SpeedFilter (정확도 필터 + EMA + 3s stale)   lib/core/speed_filter.dart        F-01, F-02
   → AlertStateMachine (idle/NORMAL/OVER)         lib/core/alert_state_machine.dart F-04
   → ChimePlayer (just_audio loop + audio_session) lib/services/chime_player.dart    F-05
@@ -27,6 +28,10 @@ DriveController (Riverpod Notifier)이 위 파이프라인을 묶음  lib/featur
 - `lib/core/` 는 Flutter·플러그인 import 금지인 순수 Dart. 시간(`now`)을 인자로 받는다. 반드시 단위 테스트.
 - 차임 on/off 는 **상태 머신 출력(`chimeOn`)만** 결정한다. UI 에서 직접 재생 금지(미리듣기 제외).
 - UI 는 `driveControllerProvider` 를 구독만 한다. 화면이 꺼져도 경고 동작이 유지돼야 한다.
+- F-06 알림 "Chime Relay": On(추적 중, [Off]) / Off(일시정지, [On][종료]). 문구·버튼은
+  `lib/core/relay_notification.dart`. 알림 버튼은 TaskHandler → `sendDataToMain` → `DriveController`
+  의 `start/pause/stop` 으로 들어온다(앱 버튼과 같은 경로). 파이프라인은 메인 isolate 에서 돌고
+  서비스는 `stopWithTask`·`allowAutoRestart: false` 라 앱 태스크를 지우면 같이 종료된다.
 - 저장 데이터는 기준 속도·음량·화면 켜짐 유지(+고지 확인 여부)뿐. 위치 기록 저장 금지.
 
 ## 규칙
@@ -39,7 +44,7 @@ DriveController (Riverpod Notifier)이 위 파이프라인을 묶음  lib/featur
 
 ## 알려진 TODO
 
-- F-06 알림 "종료" 버튼: geolocator 알림은 액션 미지원 → `flutter_foreground_task` 전환 필요.
+- F-06 실기기 검증: 알림 버튼 동작, 앱을 백그라운드에 둔 채 Off/On, iOS 는 알림을 길게 눌러야 버튼이 보임.
 - iOS `Podfile` 은 macOS 에서 첫 `pod install` 시 생성됨. 생성 후 permission_handler 매크로
   (`PERMISSION_LOCATION_WHENINUSE=1`, `PERMISSION_NOTIFICATIONS=1`) 를 post_install 에 추가.
 - 배터리 최적화 제외 안내 화면 (삼성 등), Fastlane 배포 설정 (M4).

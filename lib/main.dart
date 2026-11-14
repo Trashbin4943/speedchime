@@ -4,10 +4,13 @@ import 'package:material_ui/material_ui.dart';
 import 'features/drive/drive_screen.dart';
 import 'features/onboarding/disclaimer_screen.dart';
 import 'providers.dart';
+import 'services/relay_service.dart';
 import 'services/settings_repository.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  // F-06: 알림 버튼(TaskHandler) → 메인 isolate 통신 포트.
+  RelayService.initCommunicationPort();
   final repo = await SettingsRepository.create();
   runApp(
     ProviderScope(

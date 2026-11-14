@@ -38,7 +38,11 @@ class DriveScreen extends ConsumerWidget {
           padding: const EdgeInsets.all(24),
           child: Column(
             children: [
-              _GpsBadge(running: drive.running, gpsOk: drive.gpsOk),
+              _GpsBadge(
+                running: drive.running,
+                paused: drive.paused,
+                gpsOk: drive.gpsOk,
+              ),
               const Spacer(),
               Text(
                 drive.speedKph?.round().toString() ?? '--',
@@ -61,17 +65,27 @@ class DriveScreen extends ConsumerWidget {
                       ref.read(permissionServiceProvider).openSettings(),
                   child: const Text('위치 권한이 필요합니다 · 설정 열기'),
                 ),
+              // 알림의 Chime Relay On/Off/종료 버튼과 같은 동작이다.
               SizedBox(
                 width: double.infinity,
                 height: 64,
                 child: FilledButton(
                   onPressed: drive.running ? controller.stop : controller.start,
                   child: Text(
-                    drive.running ? '주행 종료' : '주행 시작',
+                    drive.running
+                        ? '주행 종료'
+                        : drive.paused
+                        ? '주행 재개'
+                        : '주행 시작',
                     style: const TextStyle(fontSize: 22),
                   ),
                 ),
               ),
+              if (drive.paused)
+                TextButton(
+                  onPressed: controller.stop,
+                  child: const Text('알림 닫기'),
+                ),
               const SizedBox(height: 8),
               Text(
                 '참고용 속도입니다. 법적 속도계가 아닙니다.',
@@ -86,15 +100,20 @@ class DriveScreen extends ConsumerWidget {
 }
 
 class _GpsBadge extends StatelessWidget {
-  const _GpsBadge({required this.running, required this.gpsOk});
+  const _GpsBadge({
+    required this.running,
+    required this.paused,
+    required this.gpsOk,
+  });
 
   final bool running;
+  final bool paused;
   final bool gpsOk;
 
   @override
   Widget build(BuildContext context) {
     final (label, color) = !running
-        ? ('대기', Colors.grey)
+        ? (paused ? 'Chime Relay Off' : '대기', Colors.grey)
         : gpsOk
         ? ('GPS 수신 중', Colors.green)
         : ('GPS 없음', Colors.orange);
