@@ -37,7 +37,8 @@ class _SpeedChimeAppState extends ConsumerState<SpeedChimeApp> {
   Widget build(BuildContext context) {
     return MaterialApp(
       title: 'SpeedChime',
-      theme: meterTheme(),
+      // 설정의 테마 색(하늘색 기본 / 빨간색 / 노란색)을 앱 전체에 적용.
+      theme: meterTheme(ref.watch(settingsProvider.select((s) => s.theme))),
       home: _showDisclaimer
           ? DisclaimerScreen(
               onAccept: () async {

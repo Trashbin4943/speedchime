@@ -3,7 +3,6 @@ import 'dart:math' as math;
 import 'package:material_ui/material_ui.dart';
 
 import '../core/seven_segment.dart';
-import 'meter_theme.dart';
 
 /// 7-세그먼트 숫자 줄. 꺼진 칸은 8% 로 비치고, 켜진 칸은 발광한다.
 class SevenSegmentDisplay extends StatelessWidget {
@@ -13,7 +12,7 @@ class SevenSegmentDisplay extends StatelessWidget {
     required this.digitWidth,
     required this.digitHeight,
     this.gap = 10,
-    this.color = MeterColors.glow,
+    required this.color,
     required this.semanticsLabel,
   });
 

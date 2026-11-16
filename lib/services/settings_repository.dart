@@ -9,6 +9,7 @@ class SettingsRepository {
   static const _kThreshold = 'threshold_kph';
   static const _kVolume = 'volume';
   static const _kKeepScreenOn = 'keep_screen_on';
+  static const _kTheme = 'meter_theme';
   static const _kDisclaimerAccepted = 'disclaimer_accepted';
 
   final SharedPreferencesWithCache _prefs;
@@ -28,6 +29,7 @@ class SettingsRepository {
           : AppSettings.defaultThresholdKph,
       volume: _prefs.getDouble(_kVolume) ?? 1.0,
       keepScreenOn: _prefs.getBool(_kKeepScreenOn) ?? false,
+      theme: MeterTheme.fromName(_prefs.getString(_kTheme)),
     );
   }
 
@@ -35,6 +37,7 @@ class SettingsRepository {
     await _prefs.setInt(_kThreshold, s.thresholdKph);
     await _prefs.setDouble(_kVolume, s.volume);
     await _prefs.setBool(_kKeepScreenOn, s.keepScreenOn);
+    await _prefs.setString(_kTheme, s.theme.name);
   }
 
   bool get disclaimerAccepted => _prefs.getBool(_kDisclaimerAccepted) ?? false;

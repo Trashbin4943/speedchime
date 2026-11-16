@@ -38,6 +38,7 @@ class SettingsNotifier extends Notifier<AppSettings> {
   Future<void> setVolume(double v) => update(state.copyWith(volume: v));
   Future<void> setKeepScreenOn(bool on) =>
       update(state.copyWith(keepScreenOn: on));
+  Future<void> setTheme(MeterTheme t) => update(state.copyWith(theme: t));
 }
 
 final settingsProvider = NotifierProvider<SettingsNotifier, AppSettings>(

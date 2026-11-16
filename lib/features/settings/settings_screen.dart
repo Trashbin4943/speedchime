@@ -4,8 +4,10 @@ import 'package:material_ui/material_ui.dart';
 import '../../core/app_settings.dart';
 import '../../providers.dart';
 import '../../services/chime_player.dart';
+import '../../ui/meter_theme.dart';
 
-/// F-03 기준 속도, F-07 화면 켜짐 유지, F-08 미리듣기·음량.
+/// 테마 색, F-07 화면 켜짐 유지, F-08 미리듣기·음량.
+/// 기준 속도(F-03)는 주행 화면에서 고른다.
 class SettingsScreen extends ConsumerStatefulWidget {
   const SettingsScreen({super.key});
 
@@ -41,15 +43,24 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
-          const Text('기준 속도'),
+          const Text('테마 색'),
           const SizedBox(height: 8),
-          SegmentedButton<int>(
+          SegmentedButton<MeterTheme>(
+            showSelectedIcon: false,
             segments: [
-              for (final kph in AppSettings.thresholdOptions)
-                ButtonSegment(value: kph, label: Text('$kph')),
+              for (final t in MeterTheme.values)
+                ButtonSegment(
+                  value: t,
+                  icon: Icon(
+                    Icons.circle,
+                    size: 14,
+                    color: MeterPalette.forTheme(t).glow,
+                  ),
+                  label: Text(t.label),
+                ),
             ],
-            selected: {s.thresholdKph},
-            onSelectionChanged: (v) => n.setThreshold(v.first),
+            selected: {s.theme},
+            onSelectionChanged: (v) => n.setTheme(v.first),
           ),
           const SizedBox(height: 24),
           const Text('차임 음량'),

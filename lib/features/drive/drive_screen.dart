@@ -2,6 +2,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:material_ui/material_ui.dart';
 
 import '../../core/alert_state_machine.dart';
+import '../../core/app_settings.dart';
 import '../../core/gait.dart';
 import '../../core/seven_segment.dart';
 import '../../providers.dart';
@@ -13,11 +14,13 @@ import 'drive_controller.dart';
 
 /// F-07 주행 화면 — 2000년대 택시미터(VFD) 콘셉트.
 /// 속도는 7-세그먼트 숫자로, 달리는 말은 속도에 따라 다리 빠르기가 달라진다.
+/// 기준 속도(F-03)는 이 화면에서 고르며, 주행 중에도 바꿀 수 있다.
 class DriveScreen extends ConsumerWidget {
   const DriveScreen({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final p = MeterPalette.of(context);
     final drive = ref.watch(driveControllerProvider);
     final settings = ref.watch(settingsProvider);
     final controller = ref.read(driveControllerProvider.notifier);
@@ -36,10 +39,10 @@ class DriveScreen extends ConsumerWidget {
         : '시속 ${drive.speedKph!.round()} 킬로미터';
 
     return Scaffold(
-      backgroundColor: MeterColors.background,
+      backgroundColor: MeterPalette.background,
       body: SafeArea(
         child: DefaultTextStyle.merge(
-          style: const TextStyle(color: MeterColors.glow),
+          style: TextStyle(color: p.glow),
           // 작은 화면에서는 스크롤, 큰 화면에서는 버튼을 바닥에 붙인다.
           child: CustomScrollView(
             slivers: [
@@ -66,6 +69,9 @@ class DriveScreen extends ConsumerWidget {
                         speedDigits: speedDigits,
                         speedLabel: speedLabel,
                         thresholdKph: settings.thresholdKph,
+                        onThreshold: ref
+                            .read(settingsProvider.notifier)
+                            .setThreshold,
                         running: drive.running,
                         over: over,
                       ),
@@ -81,7 +87,7 @@ class DriveScreen extends ConsumerWidget {
                       if (drive.permissionDenied)
                         TextButton(
                           style: TextButton.styleFrom(
-                            foregroundColor: MeterColors.over,
+                            foregroundColor: p.over,
                             minimumSize: const Size.fromHeight(44),
                           ),
                           onPressed: () => ref
@@ -94,11 +100,8 @@ class DriveScreen extends ConsumerWidget {
                         height: 64,
                         child: OutlinedButton(
                           style: OutlinedButton.styleFrom(
-                            foregroundColor: MeterColors.glow,
-                            side: const BorderSide(
-                              color: MeterColors.glow,
-                              width: 1.5,
-                            ),
+                            foregroundColor: p.glow,
+                            side: BorderSide(color: p.glow, width: 1.5),
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(12),
                             ),
@@ -122,20 +125,17 @@ class DriveScreen extends ConsumerWidget {
                       if (drive.paused)
                         TextButton(
                           style: TextButton.styleFrom(
-                            foregroundColor: MeterColors.secondary,
+                            foregroundColor: p.secondary,
                             minimumSize: const Size.fromHeight(44),
                           ),
                           onPressed: controller.stop,
                           child: const Text('알림 닫기'),
                         ),
                       const SizedBox(height: 8),
-                      const Text(
+                      Text(
                         '참고용 속도입니다 · 법적 속도계가 아닙니다',
                         textAlign: TextAlign.center,
-                        style: TextStyle(
-                          fontSize: 12,
-                          color: MeterColors.secondary,
-                        ),
+                        style: TextStyle(fontSize: 12, color: p.secondary),
                       ),
                     ],
                   ),
@@ -157,6 +157,7 @@ class _Header extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final p = MeterPalette.of(context);
     final (label, lit) = !drive.running
         ? (drive.paused ? 'Chime Relay Off' : '대기', false)
         : drive.gpsOk
@@ -169,10 +170,7 @@ class _Header extends StatelessWidget {
         Expanded(
           child: Text(
             label,
-            style: TextStyle(
-              fontSize: 13,
-              color: lit ? MeterColors.glow : MeterColors.secondary,
-            ),
+            style: TextStyle(fontSize: 13, color: lit ? p.glow : p.secondary),
           ),
         ),
         Text(
@@ -185,15 +183,13 @@ class _Header extends StatelessWidget {
           child: IconButton(
             tooltip: '설정',
             onPressed: onSettings,
-            color: MeterColors.glow,
-            disabledColor: MeterColors.dim,
+            color: p.glow,
+            disabledColor: p.dim,
             style: IconButton.styleFrom(
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(10),
                 side: BorderSide(
-                  color: onSettings == null
-                      ? MeterColors.dimBorder
-                      : MeterColors.line,
+                  color: onSettings == null ? p.dimBorder : p.line,
                 ),
               ),
             ),
@@ -211,6 +207,7 @@ class _MeterPanel extends StatelessWidget {
     required this.speedDigits,
     required this.speedLabel,
     required this.thresholdKph,
+    required this.onThreshold,
     required this.running,
     required this.over,
   });
@@ -219,16 +216,18 @@ class _MeterPanel extends StatelessWidget {
   final List<Set<Seg>> speedDigits;
   final String speedLabel;
   final int thresholdKph;
+  final ValueChanged<int> onThreshold;
   final bool running;
   final bool over;
 
   @override
   Widget build(BuildContext context) {
+    final p = MeterPalette.of(context);
     return Container(
       padding: const EdgeInsets.fromLTRB(18, 16, 18, 18),
       decoration: BoxDecoration(
-        color: MeterColors.panel,
-        border: Border.all(color: MeterColors.line),
+        color: MeterPalette.panel,
+        border: Border.all(color: p.line),
         borderRadius: BorderRadius.circular(14),
       ),
       child: Column(
@@ -237,7 +236,9 @@ class _MeterPanel extends StatelessWidget {
           Row(
             crossAxisAlignment: CrossAxisAlignment.end,
             children: [
-              Flexible(child: RunningHorse(gait: gait)),
+              Flexible(
+                child: RunningHorse(gait: gait, color: p.glow),
+              ),
               const SizedBox(width: 12),
               Expanded(
                 child: Padding(
@@ -259,7 +260,7 @@ class _MeterPanel extends StatelessWidget {
                             : 'STRIDE --',
                         style: meterMono.copyWith(
                           fontSize: 13,
-                          color: MeterColors.secondary,
+                          color: p.secondary,
                         ),
                       ),
                     ],
@@ -278,6 +279,7 @@ class _MeterPanel extends StatelessWidget {
                   digits: speedDigits,
                   digitWidth: 70,
                   digitHeight: 124,
+                  color: p.glow,
                   semanticsLabel: speedLabel,
                 ),
                 const SizedBox(width: 14),
@@ -286,20 +288,18 @@ class _MeterPanel extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 14),
-          const Divider(height: 1, thickness: 1, color: MeterColors.divider),
+          Divider(height: 1, thickness: 1, color: p.divider),
           const SizedBox(height: 14),
           Row(
             children: [
-              const Text(
-                '기준',
-                style: TextStyle(fontSize: 13, color: MeterColors.secondary),
-              ),
+              Text('기준', style: TextStyle(fontSize: 13, color: p.secondary)),
               const SizedBox(width: 10),
               SevenSegmentDisplay(
                 digits: SevenSegment.number(thresholdKph),
                 digitWidth: 22,
                 digitHeight: 38,
                 gap: 5,
+                color: p.glow,
                 semanticsLabel: '기준 시속 $thresholdKph 킬로미터',
               ),
               const SizedBox(width: 12),
@@ -326,8 +326,67 @@ class _MeterPanel extends StatelessWidget {
               ),
             ],
           ),
+          const SizedBox(height: 12),
+          _ThresholdPicker(selected: thresholdKph, onSelected: onThreshold),
         ],
       ),
+    );
+  }
+}
+
+/// F-03 기준 속도 선택. 주행 중에도 누를 수 있도록 큼직하게 둔다.
+class _ThresholdPicker extends StatelessWidget {
+  const _ThresholdPicker({required this.selected, required this.onSelected});
+
+  final int selected;
+  final ValueChanged<int> onSelected;
+
+  @override
+  Widget build(BuildContext context) {
+    final p = MeterPalette.of(context);
+    return Row(
+      children: [
+        for (final kph in AppSettings.thresholdOptions) ...[
+          if (kph != AppSettings.thresholdOptions.first)
+            const SizedBox(width: 8),
+          Expanded(
+            child: Semantics(
+              button: true,
+              selected: kph == selected,
+              label: '기준 속도 $kph',
+              excludeSemantics: true,
+              child: Material(
+                color: kph == selected ? p.litFill : Colors.transparent,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8),
+                  side: BorderSide(
+                    color: kph == selected ? p.glow : p.dimBorder,
+                  ),
+                ),
+                child: InkWell(
+                  borderRadius: BorderRadius.circular(8),
+                  onTap: kph == selected ? null : () => onSelected(kph),
+                  child: SizedBox(
+                    height: 48,
+                    child: Center(
+                      child: Text(
+                        '$kph',
+                        style: meterMono.copyWith(
+                          fontSize: 18,
+                          color: kph == selected ? p.glow : p.secondary,
+                          shadows: kph == selected
+                              ? [Shadow(color: p.glow, blurRadius: 8)]
+                              : const [],
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ],
+      ],
     );
   }
 }
@@ -347,10 +406,11 @@ class _RelayPanel extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final p = MeterPalette.of(context);
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
       decoration: BoxDecoration(
-        border: Border.all(color: MeterColors.divider),
+        border: Border.all(color: p.divider),
         borderRadius: BorderRadius.circular(12),
       ),
       child: Row(
@@ -364,9 +424,9 @@ class _RelayPanel extends StatelessWidget {
                   style: meterMono.copyWith(fontSize: 15, letterSpacing: 2),
                 ),
                 const SizedBox(height: 4),
-                const Text(
+                Text(
                   '상단 알림에서도 On / Off',
-                  style: TextStyle(fontSize: 12, color: MeterColors.secondary),
+                  style: TextStyle(fontSize: 12, color: p.secondary),
                 ),
               ],
             ),
@@ -380,7 +440,7 @@ class _RelayPanel extends StatelessWidget {
   }
 }
 
-/// 미터기 램프. [onPressed] 가 있으면 44px 이상 터치 영역의 버튼이 된다.
+/// 미터기 램프. [button] 이면 44px 이상 터치 영역의 버튼이 된다.
 class _Lamp extends StatefulWidget {
   const _Lamp({
     required this.label,
@@ -441,8 +501,9 @@ class _LampState extends State<_Lamp> with SingleTickerProviderStateMixin {
 
   @override
   Widget build(BuildContext context) {
-    final color = widget.warning ? MeterColors.over : MeterColors.glow;
-    final fg = widget.lit ? color : MeterColors.dim;
+    final p = MeterPalette.of(context);
+    final color = widget.warning ? p.over : p.glow;
+    final fg = widget.lit ? color : p.dim;
     final lamp = AnimatedBuilder(
       animation: _blink,
       builder: (context, child) => Opacity(
@@ -454,8 +515,8 @@ class _LampState extends State<_Lamp> with SingleTickerProviderStateMixin {
         constraints: const BoxConstraints(minHeight: 32),
         padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
         decoration: BoxDecoration(
-          color: widget.lit && !widget.warning ? MeterColors.litFill : null,
-          border: Border.all(color: widget.lit ? color : MeterColors.dimBorder),
+          color: widget.lit && !widget.warning ? p.litFill : null,
+          border: Border.all(color: widget.lit ? color : p.dimBorder),
           borderRadius: BorderRadius.circular(6),
         ),
         alignment: Alignment.center,
@@ -472,9 +533,12 @@ class _LampState extends State<_Lamp> with SingleTickerProviderStateMixin {
       ),
     );
 
-    final semantic = '${widget.label} ${widget.lit ? '켜짐' : '꺼짐'}';
     if (!widget.button) {
-      return Semantics(label: semantic, excludeSemantics: true, child: lamp);
+      return Semantics(
+        label: '${widget.label} ${widget.lit ? '켜짐' : '꺼짐'}',
+        excludeSemantics: true,
+        child: lamp,
+      );
     }
     return Semantics(
       button: true,
@@ -500,15 +564,14 @@ class _Dot extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final p = MeterPalette.of(context);
     return Container(
       width: 10,
       height: 10,
       decoration: BoxDecoration(
         shape: BoxShape.circle,
-        color: lit ? MeterColors.glow : MeterColors.dim,
-        boxShadow: lit
-            ? const [BoxShadow(color: MeterColors.glow, blurRadius: 6)]
-            : null,
+        color: lit ? p.glow : p.dim,
+        boxShadow: lit ? [BoxShadow(color: p.glow, blurRadius: 6)] : null,
       ),
     );
   }

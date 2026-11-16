@@ -4,7 +4,6 @@ import 'package:flutter/scheduler.dart';
 import 'package:material_ui/material_ui.dart';
 
 import '../core/gait.dart';
-import 'meter_theme.dart';
 
 /// 택시미터 콘셉트의 달리는 말. 속도가 빠를수록 다리를 빨리 휘두른다.
 ///
@@ -15,7 +14,7 @@ class RunningHorse extends StatefulWidget {
     super.key,
     required this.gait,
     this.width = 176,
-    this.color = MeterColors.glow,
+    required this.color,
   });
 
   final Gait gait;

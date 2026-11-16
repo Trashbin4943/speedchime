@@ -89,6 +89,10 @@ class FakeWake implements ScreenWake {
 class FakeSettings extends SettingsNotifier {
   @override
   AppSettings build() => const AppSettings();
+
+  // 저장소 없이 메모리에서만 바꾼다.
+  @override
+  Future<void> update(AppSettings next) async => state = next;
 }
 
 void main() {
@@ -191,5 +195,56 @@ void main() {
     await pumpEventQueue();
     expect(relay.log, ['on:120', 'off']);
     expect(st().paused, isTrue);
+  });
+
+  RawFix fixAt(double kph) => RawFix(
+    timestamp: DateTime.now(),
+    latitude: 37,
+    longitude: 127,
+    horizontalAccuracyM: 5,
+    speedMps: kph / 3.6,
+    speedAccuracyMps: 0.5,
+  );
+
+  test('주행 중 기준 속도 변경 → 알림 문구 갱신', () async {
+    await ctl().start();
+    await c.read(settingsProvider.notifier).setThreshold(140);
+    await pumpEventQueue();
+    expect(relay.log, ['on:120', 'on:140']);
+    expect(st().running, isTrue);
+  });
+
+  test('주행 중 기준을 현재 속도 아래로 내리면 바로 초과 판정 시작', () async {
+    await ctl().start();
+    location.ctrl!.add(fixAt(110));
+    await pumpEventQueue();
+    expect(st().alert.aboveSince, isNull); // 110 < 120
+
+    await c.read(settingsProvider.notifier).setThreshold(100);
+    await pumpEventQueue();
+    expect(st().alert.phase, AlertPhase.normal);
+    expect(st().alert.aboveSince, isNotNull); // 2초 지속 타이머 시작
+  });
+
+  test('OVER 중 기준을 올리면 바로 NORMAL, 차임 정지', () async {
+    await ctl().start();
+    location.ctrl!.add(fixAt(130));
+    await pumpEventQueue();
+    // 2초 지속을 기다리는 대신 상태를 OVER 로 맞춰 둔다.
+    c.read(driveControllerProvider.notifier).state = st().copyWith(
+      alert: const AlertState.over(),
+    );
+    chime.playing = true;
+
+    await c.read(settingsProvider.notifier).setThreshold(140);
+    await pumpEventQueue();
+    expect(st().alert.phase, AlertPhase.normal);
+    expect(chime.playing, isFalse);
+  });
+
+  test('대기 중 기준 변경은 알림을 띄우지 않음', () async {
+    await c.read(settingsProvider.notifier).setThreshold(100);
+    await pumpEventQueue();
+    expect(relay.log, isEmpty);
   });
 }
