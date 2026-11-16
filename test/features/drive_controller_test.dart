@@ -74,6 +74,8 @@ class FakeChime implements ChimePlayer {
   @override
   Future<void> preview() async {}
   @override
+  Future<void> stopPreview() async {}
+  @override
   Future<void> dispose() async {}
 }
 
