@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:speedchime/core/alert_state_machine.dart';
 import 'package:speedchime/core/app_settings.dart';
+import 'package:speedchime/core/chime_sound.dart';
 import 'package:speedchime/core/relay_notification.dart';
 import 'package:speedchime/core/speed_filter.dart';
 import 'package:speedchime/features/drive/drive_controller.dart';
@@ -62,6 +63,19 @@ class FakePermission implements PermissionService {
 
 class FakeChime implements ChimePlayer {
   bool playing = false;
+  final used = <ChimeSound>[];
+
+  @override
+  ChimeSound alertSound = ChimeCatalog.defaultSound;
+  @override
+  Future<bool> useSound(ChimeSound sound) async {
+    used.add(sound);
+    alertSound = sound;
+    return true;
+  }
+
+  @override
+  Future<Duration?> probe(String filePath) async => const Duration(seconds: 1);
 
   @override
   Future<void> init() async {}
@@ -72,7 +86,7 @@ class FakeChime implements ChimePlayer {
   @override
   Future<void> stop() async => playing = false;
   @override
-  Future<void> preview() async {}
+  Future<bool> preview([ChimeSound? sound]) async => true;
   @override
   Future<void> stopPreview() async {}
   @override
@@ -115,6 +129,14 @@ void main() {
         chimePlayerProvider.overrideWithValue(chime),
         screenWakeProvider.overrideWithValue(FakeWake()),
         settingsProvider.overrideWith(FakeSettings.new),
+        chimeCatalogProvider.overrideWithValue(
+          AsyncValue.data(
+            ChimeCatalog.fromAssets([
+              'assets/audio/chime.wav',
+              'assets/audio/chime_beep.wav',
+            ]),
+          ),
+        ),
       ],
     );
   });
@@ -246,5 +268,32 @@ void main() {
     await c.read(settingsProvider.notifier).setThreshold(100);
     await pumpEventQueue();
     expect(relay.log, isEmpty);
+  });
+
+  test('주행 시작 시 고른 경고음을 건다', () async {
+    await c
+        .read(settingsProvider.notifier)
+        .setSound(
+          const AssetChimeSound('assets/audio/chime_beep.wav', '디지털 삐삐'),
+        );
+    await ctl().start();
+    expect(chime.used.single.label, '디지털 삐삐');
+  });
+
+  test('내 사운드 파일 정보가 없으면 기본음으로 시작', () async {
+    await c
+        .read(settingsProvider.notifier)
+        .update(const AppSettings(soundId: CustomChimeSound.customId));
+    await ctl().start();
+    expect(chime.used.single, ChimeCatalog.defaultSound);
+  });
+
+  test('내 사운드 삭제 시 선택이 기본음으로 돌아감', () async {
+    final n = c.read(settingsProvider.notifier);
+    await n.setCustomSound(const CustomChimeSound('/x/custom_1.mp3', 'a.mp3'));
+    expect(c.read(selectedSoundProvider), isA<CustomChimeSound>());
+    await n.clearCustomSound();
+    expect(c.read(settingsProvider).customSoundPath, isNull);
+    expect(c.read(selectedSoundProvider), ChimeCatalog.defaultSound);
   });
 }

@@ -10,6 +10,9 @@ class SettingsRepository {
   static const _kVolume = 'volume';
   static const _kKeepScreenOn = 'keep_screen_on';
   static const _kTheme = 'meter_theme';
+  static const _kSound = 'chime_sound';
+  static const _kCustomPath = 'custom_sound_path';
+  static const _kCustomName = 'custom_sound_name';
   static const _kDisclaimerAccepted = 'disclaimer_accepted';
 
   final SharedPreferencesWithCache _prefs;
@@ -30,6 +33,9 @@ class SettingsRepository {
       volume: _prefs.getDouble(_kVolume) ?? 1.0,
       keepScreenOn: _prefs.getBool(_kKeepScreenOn) ?? false,
       theme: MeterTheme.fromName(_prefs.getString(_kTheme)),
+      soundId: _prefs.getString(_kSound) ?? AppSettings.defaultSoundId,
+      customSoundPath: _prefs.getString(_kCustomPath),
+      customSoundName: _prefs.getString(_kCustomName),
     );
   }
 
@@ -38,6 +44,17 @@ class SettingsRepository {
     await _prefs.setDouble(_kVolume, s.volume);
     await _prefs.setBool(_kKeepScreenOn, s.keepScreenOn);
     await _prefs.setString(_kTheme, s.theme.name);
+    await _prefs.setString(_kSound, s.soundId);
+    await _setOrRemove(_kCustomPath, s.customSoundPath);
+    await _setOrRemove(_kCustomName, s.customSoundName);
+  }
+
+  Future<void> _setOrRemove(String key, String? value) async {
+    if (value == null) {
+      await _prefs.remove(key);
+    } else {
+      await _prefs.setString(key, value);
+    }
   }
 
   bool get disclaimerAccepted => _prefs.getBool(_kDisclaimerAccepted) ?? false;

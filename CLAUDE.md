@@ -10,7 +10,7 @@ Flutter(Android·iOS) 앱. 서버 없음, 위치는 기기 안에서만 처리. 
 flutter analyze                     # 정적 분석 (경고 0 유지)
 flutter test                        # 단위 테스트
 dart format lib test                # 포맷 (CI가 검사함)
-python3 tool/gen_chime.py           # assets/audio/chime.wav 재합성
+python3 tool/gen_chime.py           # assets/audio/ 기본 제공 경고음 재합성 (이름 주면 하나만)
 flutter run                         # 실기기/에뮬레이터 실행
 ```
 
@@ -40,7 +40,11 @@ DriveController (Riverpod Notifier)이 위 파이프라인을 묶음  lib/featur
   "애니메이션 줄이기" 설정이면 말·OVER 깜빡임을 멈춘다.
 - 기준 속도(F-03)는 주행 화면에서 고르고, 주행 중에도 바꿀 수 있다. 바꾸면 즉시 다시 판정하고 알림 문구도 갱신
   (OVER 진입은 여전히 2초 지속 규칙).
-- 저장 데이터는 기준 속도·음량·화면 켜짐 유지·테마 색(+고지 확인 여부)뿐. 위치 기록 저장 금지.
+- 경고음: 기본 제공음은 `assets/audio/` (pubspec 에 폴더째 등록). `lib/core/chime_sound.dart` 의 `presets` 는
+  이름을 붙여 앞에 두고, 폴더에 넣은 다른 오디오 파일(wav/mp3/m4a/aac/ogg)은 파일 이름으로 자동으로 목록에 뜬다.
+  내 사운드는 사용자가 고른 파일을 앱 전용 폴더(`custom_sound/`)에 복사해 쓴다(2MB·10초 이하, 기기 밖 전송 없음).
+  주행 시작 때 `ChimePlayer.useSound` 로 걸고, 파일을 못 열면 기본음으로 되돌린다.
+- 저장 데이터는 기준 속도·음량·화면 켜짐 유지·테마 색·경고음 선택(+내 사운드 경로, 고지 확인 여부)뿐. 위치 기록 저장 금지.
 
 ## 규칙
 
@@ -48,7 +52,7 @@ DriveController (Riverpod Notifier)이 위 파이프라인을 묶음  lib/featur
 - Android: `ACCESS_BACKGROUND_LOCATION` 추가 금지 (Foreground Service 로 대체, PRD 4).
 - iOS: `UIBackgroundModes` = location + audio. 오디오 세션은 mixWithOthers|duckOthers, playback.
 - 사용자 대면 문구는 한국어. "참고용 속도 / 법적 속도계 아님" 고지 유지.
-- 비목표(회원가입·서버·주행기록·OBD·단속카메라·커스텀 사운드/속도) 는 구현하지 않는다.
+- 비목표(회원가입·서버·주행기록·OBD·단속카메라·사용자 임의 기준 속도) 는 구현하지 않는다.
 
 ## 알려진 TODO
 
