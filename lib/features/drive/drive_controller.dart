@@ -131,6 +131,9 @@ class DriveController extends Notifier<DriveState> {
     final chime = ref.read(chimePlayerProvider);
     await chime.init();
     await chime.setVolume(settings.volume);
+    // 고른 경고음을 건다 (목록을 먼저 읽어 사라진 파일이면 기본음).
+    await ref.read(chimeCatalogProvider.future);
+    await chime.useSound(ref.read(selectedSoundProvider));
     if (settings.keepScreenOn) await ref.read(screenWakeProvider).enable();
 
     _filter.reset();
