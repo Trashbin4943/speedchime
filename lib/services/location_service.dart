@@ -4,11 +4,10 @@ import 'package:geolocator/geolocator.dart';
 
 import '../core/speed_filter.dart';
 
-/// F-01 / F-06: 1초 간격 위치 스트림. Android는 location 타입
-/// Foreground Service 알림으로, iOS는 Background Modes(location)로 백그라운드 유지.
-///
-/// TODO(F-06): 알림의 "종료" 액션 버튼은 geolocator 알림이 지원하지 않으므로
-/// flutter_foreground_task 로 전환하거나 플랫폼 채널로 구현해야 한다.
+/// F-01: 1초 간격 위치 스트림.
+/// 백그라운드 유지는 Android 에서는 RelayService(location 타입 Foreground
+/// Service)가, iOS 에서는 Background Modes(location)가 맡는다. 그래서 여기서는
+/// geolocator 자체 Foreground 알림을 쓰지 않는다(알림이 두 개 뜨는 것 방지).
 class LocationService {
   Stream<RawFix> fixes() {
     return Geolocator.getPositionStream(locationSettings: _settings())
@@ -21,12 +20,6 @@ class LocationService {
         accuracy: LocationAccuracy.bestForNavigation,
         distanceFilter: 0,
         intervalDuration: const Duration(seconds: 1),
-        foregroundNotificationConfig: const ForegroundNotificationConfig(
-          notificationTitle: 'SpeedChime',
-          notificationText: '속도 추적 중',
-          enableWakeLock: true,
-          setOngoing: true,
-        ),
       );
     }
     if (Platform.isIOS) {
