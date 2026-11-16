@@ -6,7 +6,6 @@ import 'features/onboarding/disclaimer_screen.dart';
 import 'providers.dart';
 import 'services/relay_service.dart';
 import 'services/settings_repository.dart';
-import 'ui/meter_theme.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -37,7 +36,13 @@ class _SpeedChimeAppState extends ConsumerState<SpeedChimeApp> {
   Widget build(BuildContext context) {
     return MaterialApp(
       title: 'SpeedChime',
-      theme: meterTheme(),
+      themeMode: ThemeMode.dark,
+      darkTheme: ThemeData(
+        colorScheme: ColorScheme.fromSeed(
+          seedColor: Colors.amber,
+          brightness: Brightness.dark,
+        ),
+      ),
       home: _showDisclaimer
           ? DisclaimerScreen(
               onAccept: () async {

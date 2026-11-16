@@ -32,10 +32,6 @@ DriveController (Riverpod Notifier)이 위 파이프라인을 묶음  lib/featur
   `lib/core/relay_notification.dart`. 알림 버튼은 TaskHandler → `sendDataToMain` → `DriveController`
   의 `start/pause/stop` 으로 들어온다(앱 버튼과 같은 경로). 파이프라인은 메인 isolate 에서 돌고
   서비스는 `stopWithTask`·`allowAutoRestart: false` 라 앱 태스크를 지우면 같이 종료된다.
-- 주행 화면은 택시미터(VFD) 콘셉트: 검은 배경, 하늘색 글자·선(`lib/ui/meter_theme.dart`), 주황은 OVER 경고에만.
-  속도는 `SevenSegmentDisplay`(꺼진 칸이 비치는 7-세그먼트), 달리는 말은 `RunningHorse`.
-  말 다리 주기 = 1.6초 × 40 ÷ (속도 + 40) (`lib/core/gait.dart`), 위상을 누적해 속도가 바뀌어도 끊기지 않음.
-  "애니메이션 줄이기" 설정이면 말·OVER 깜빡임을 멈춘다.
 - 저장 데이터는 기준 속도·음량·화면 켜짐 유지(+고지 확인 여부)뿐. 위치 기록 저장 금지.
 
 ## 규칙
