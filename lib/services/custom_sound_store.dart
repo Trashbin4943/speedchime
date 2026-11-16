@@ -2,6 +2,8 @@ import 'dart:io';
 import 'dart:typed_data';
 
 import 'package:file_picker/file_picker.dart';
+import 'package:meta/meta.dart';
+import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
 
 import '../core/chime_sound.dart';
@@ -47,7 +49,7 @@ class CustomSoundStore {
   final Future<Directory> Function() _baseDir;
 
   Future<Directory> _dir() async {
-    final d = Directory('${(await _baseDir()).path}/custom_sound');
+    final d = Directory(p.join((await _baseDir()).path, 'custom_sound'));
     if (!await d.exists()) await d.create(recursive: true);
     return d;
   }
@@ -70,7 +72,7 @@ class CustomSoundStore {
     final ext = CustomSoundRules.extensionOf(picked.name);
     // 같은 이름에 덮어쓰면 플레이어 캐시가 옛 파일을 쥐고 있을 수 있어 매번 새 이름.
     final file = File(
-      '${dir.path}/custom_${DateTime.now().millisecondsSinceEpoch}.$ext',
+      p.join(dir.path, 'custom_${DateTime.now().millisecondsSinceEpoch}.$ext'),
     );
     await file.writeAsBytes(await picked.readBytes(), flush: true);
 
@@ -93,8 +95,22 @@ class CustomSoundStore {
 
   static Future<void> _removeAllExcept(Directory dir, String? keep) async {
     await for (final e in dir.list()) {
-      if (e is File && e.path != keep) await e.delete();
+      if (e is File && !(keep != null && isSameEntry(e.path, keep))) {
+        await e.delete();
+      }
     }
+  }
+
+  /// 폴더 목록에서 나온 경로가 남겨 둘 파일인지.
+  ///
+  /// 경로 문자열을 그대로 비교하면 안 된다: Windows 에서는 `dir.list()` 가
+  /// 마지막 구분자를 `\` 로 붙여서, 같은 파일이라도 `…/custom_sound\x.wav` 와
+  /// `…/custom_sound/x.wav` 처럼 문자열이 달라진다(방금 저장한 파일을 지우던 버그).
+  /// 모두 같은 폴더 안의 파일이므로 파일 이름으로 비교한다.
+  @visibleForTesting
+  static bool isSameEntry(String listed, String keep, {p.Context? context}) {
+    final c = context ?? p.context;
+    return c.basename(listed) == c.basename(keep);
   }
 
   static Future<PickedSound?> _platformPicker() async {

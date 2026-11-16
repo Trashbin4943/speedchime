@@ -2,6 +2,7 @@ import 'dart:io';
 import 'dart:typed_data';
 
 import 'package:flutter_test/flutter_test.dart';
+import 'package:path/path.dart' as p;
 import 'package:speedchime/services/custom_sound_store.dart';
 
 void main() {
@@ -21,7 +22,7 @@ void main() {
   );
 
   List<String> stored() =>
-      Directory('${tmp.path}/custom_sound')
+      Directory(p.join(tmp.path, 'custom_sound'))
           .listSync()
           .map((e) => e.path)
           .toList();
@@ -36,7 +37,7 @@ void main() {
     final s = await store().import(file('My Horn.mp3'));
     expect(s.fileName, 'My Horn.mp3');
     expect(File(s.filePath).existsSync(), isTrue);
-    expect(s.filePath, startsWith('${tmp.path}/custom_sound/'));
+    expect(p.isWithin(p.join(tmp.path, 'custom_sound'), s.filePath), isTrue);
     expect(s.filePath, endsWith('.mp3'));
   });
 
@@ -53,7 +54,7 @@ void main() {
       store().import(file('song.flac')),
       throwsA(isA<CustomSoundException>()),
     );
-    expect(Directory('${tmp.path}/custom_sound').existsSync(), isFalse);
+    expect(Directory(p.join(tmp.path, 'custom_sound')).existsSync(), isFalse);
   });
 
   test('너무 길거나 못 열면 복사본을 지우고 거절', () async {
@@ -91,5 +92,48 @@ void main() {
     await store().import(file('a.wav'));
     await store().remove();
     expect(stored(), isEmpty);
+  });
+
+  group('isSameEntry: 구분자가 섞여도 같은 파일로 본다', () {
+    test('Windows: list() 는 \\, 저장 경로는 / (실제로 나던 버그)', () {
+      expect(
+        CustomSoundStore.isSameEntry(
+          r'C:\Temp\t1/custom_sound\custom_1794808579911.wav',
+          r'C:\Temp\t1/custom_sound/custom_1794808579911.wav',
+          context: p.windows,
+        ),
+        isTrue,
+      );
+    });
+
+    test('Windows: 다른 파일은 다르다', () {
+      expect(
+        CustomSoundStore.isSameEntry(
+          r'C:\Temp\t1\custom_sound\custom_1.wav',
+          r'C:\Temp\t1\custom_sound\custom_2.wav',
+          context: p.windows,
+        ),
+        isFalse,
+      );
+    });
+
+    test('POSIX (Android·iOS)', () {
+      expect(
+        CustomSoundStore.isSameEntry(
+          '/data/custom_sound/custom_1.mp3',
+          '/data/custom_sound/custom_1.mp3',
+          context: p.posix,
+        ),
+        isTrue,
+      );
+      expect(
+        CustomSoundStore.isSameEntry(
+          '/data/custom_sound/custom_1.mp3',
+          '/data/custom_sound/custom_2.mp3',
+          context: p.posix,
+        ),
+        isFalse,
+      );
+    });
   });
 }
