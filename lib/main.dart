@@ -6,6 +6,7 @@ import 'features/onboarding/disclaimer_screen.dart';
 import 'providers.dart';
 import 'services/relay_service.dart';
 import 'services/settings_repository.dart';
+import 'ui/meter_theme.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -36,13 +37,8 @@ class _SpeedChimeAppState extends ConsumerState<SpeedChimeApp> {
   Widget build(BuildContext context) {
     return MaterialApp(
       title: 'SpeedChime',
-      themeMode: ThemeMode.dark,
-      darkTheme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(
-          seedColor: Colors.amber,
-          brightness: Brightness.dark,
-        ),
-      ),
+      // 설정의 테마 색(하늘색 기본 / 빨간색 / 노란색)을 앱 전체에 적용.
+      theme: meterTheme(ref.watch(settingsProvider.select((s) => s.theme))),
       home: _showDisclaimer
           ? DisclaimerScreen(
               onAccept: () async {

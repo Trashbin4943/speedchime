@@ -76,6 +76,19 @@ class DriveController extends Notifier<DriveState> {
       chime.stop();
       wake.disable();
     });
+    // 주행 중 기준 속도 변경: 바로 다시 판정하고 알림 문구도 갱신한다.
+    // (OVER 진입은 여전히 F-04 의 2초 지속 규칙을 따른다.)
+    ref.listen<int>(settingsProvider.select((s) => s.thresholdKph), (
+      prev,
+      next,
+    ) {
+      if (prev == next || !state.running) return;
+      _evaluate(DateTime.now());
+      _serial(() async {
+        if (!state.running) return;
+        await ref.read(relayServiceProvider).show(on: true, thresholdKph: next);
+      });
+    });
     return const DriveState();
   }
 

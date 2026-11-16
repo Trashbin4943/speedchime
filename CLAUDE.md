@@ -32,7 +32,15 @@ DriveController (Riverpod Notifier)이 위 파이프라인을 묶음  lib/featur
   `lib/core/relay_notification.dart`. 알림 버튼은 TaskHandler → `sendDataToMain` → `DriveController`
   의 `start/pause/stop` 으로 들어온다(앱 버튼과 같은 경로). 파이프라인은 메인 isolate 에서 돌고
   서비스는 `stopWithTask`·`allowAutoRestart: false` 라 앱 태스크를 지우면 같이 종료된다.
-- 저장 데이터는 기준 속도·음량·화면 켜짐 유지(+고지 확인 여부)뿐. 위치 기록 저장 금지.
+- 주행 화면은 택시미터(VFD) 콘셉트: 검은 배경 + 발광색 글자·선. 발광색은 설정의 테마 색(하늘색 기본/빨간색/노란색),
+  `MeterPalette`(ThemeExtension, `lib/ui/meter_theme.dart`) 로 전달. 위젯은 `MeterPalette.of(context)` 만 쓰고 색을 하드코딩하지 않는다.
+  OVER 경고색은 테마마다 발광색과 확실히 구분되는 색(하늘↔주황, 빨강↔노랑, 노랑↔빨강).
+  속도는 `SevenSegmentDisplay`(꺼진 칸이 비치는 7-세그먼트), 달리는 말은 `RunningHorse`.
+  말 다리 주기 = 1.6초 × 40 ÷ (속도 + 40) (`lib/core/gait.dart`), 위상을 누적해 속도가 바뀌어도 끊기지 않음.
+  "애니메이션 줄이기" 설정이면 말·OVER 깜빡임을 멈춘다.
+- 기준 속도(F-03)는 주행 화면에서 고르고, 주행 중에도 바꿀 수 있다. 바꾸면 즉시 다시 판정하고 알림 문구도 갱신
+  (OVER 진입은 여전히 2초 지속 규칙).
+- 저장 데이터는 기준 속도·음량·화면 켜짐 유지·테마 색(+고지 확인 여부)뿐. 위치 기록 저장 금지.
 
 ## 규칙
 
