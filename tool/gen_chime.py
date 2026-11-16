@@ -10,7 +10,7 @@ import sys
 import wave
 
 RATE = 44100
-PERIOD_S = 1.6           # loop length: chime repeats every 1.6 s
+PERIOD_S = 1.0           # one "ding-dong~" per loop (was 1.6 s: long silent tail)
 NOTES = [                # (start s, fundamental Hz)
     (0.00, 1318.5),      # E6  "ding"
     (0.42, 1046.5),      # C6  "dong"
@@ -37,8 +37,8 @@ def main() -> None:
     out = sys.argv[1] if len(sys.argv) > 1 else "assets/audio/chime.wav"
     n = int(RATE * PERIOD_S)
     raw = [sample(i / RATE) for i in range(n)]
-    # fade the last 30 ms so the loop point is click-free
-    fade = int(RATE * 0.03)
+    # fade the last 120 ms so the shortened "dong" tail ends click-free
+    fade = int(RATE * 0.12)
     for i in range(fade):
         raw[n - fade + i] *= 1 - i / fade
     peak = max(abs(x) for x in raw) or 1.0
